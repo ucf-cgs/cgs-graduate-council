@@ -5,7 +5,7 @@ namespace {
 }
 
 namespace file_post_type{
-    
+
     if (!function_exists('file_post_type\file_post_setup')) {
         add_action('wp_enqueue_scripts', 'file_post_type\plugin_scripts', 0); // action, array, priority ( 0 lowest, 10 normal, 10+ higher)
         add_action('init', 'file_post_type\new_post_type_file_posting');
@@ -83,10 +83,20 @@ namespace file_post_type{
             $meta   = get_post_meta( $id );
             $data  = array();
 
+            $taxonomies = [
+                'committee',
+                'document-type',
+                'committee-year'
+            ];
+            foreach ($taxonomies as $taxonomy) {
+                $current_terms      = wp_get_post_terms($id, $taxonomy, ['fields' => 'all_with_object_id']);
+                $data[$taxonomy]    = esc_html( $current_terms[0]->slug ?? (( !empty( $meta[$taxonomy]  ) )? $meta[$taxonomy][0]  : '') );
+            }
+
             $data['file_url']       = esc_html( (( !empty( $meta['file_url']  ) )? $meta['file_url'][0]  : '') );
-            $data['committee']      = esc_html( (( !empty( $meta['committee']  ) )? $meta['committee'][0]  : '') );
-            $data['document-type']  = esc_html( (( !empty( $meta['document-type']  ) )? $meta['document-type'][0]  : '') );
-            $data['year']           = esc_html( (( !empty( $meta['year']  ) )? $meta['year'][0]  : '') );
+            // $data['committee']      = esc_html( (( !empty( $meta['committee']  ) )? $meta['committee'][0]  : '') );
+            // $data['document-type']  = esc_html( (( !empty( $meta['document-type']  ) )? $meta['document-type'][0]  : '') );
+            // $data['year']           = esc_html( (( !empty( $meta['year']  ) )? $meta['year'][0]  : '') );
             $data['date']           = esc_html( (( !empty( $meta['date']  ) )? $meta['date'][0]  : '') );
             $data['policy-name']    = esc_html( (( !empty( $meta['policy-name']  ) )? $meta['policy-name'][0]  : '') );
             $data['policy-status']  = esc_html( (( !empty( $meta['policy-status']  ) )? $meta['policy-status'][0]  : '') );
@@ -130,9 +140,15 @@ namespace file_post_type{
                 update_post_meta( $id, 'date', $date );
             }
         }
+        // Get the document-type taxonomy term associated with the post
         function plugin_get_document_type_tax_terms($post) {
             $taxonomy = 'document-type';
-            return wp_get_post_terms($post->ID, $taxonomy, ['fields' => 'slugs']);
+            $terms_array = wp_get_post_terms($post->ID, $taxonomy, ['fields' => 'slugs']);
+            // echo '<pre>';
+            // echo ($terms_array->errors ? 'True' : 'False') . "\n";
+            // var_dump($terms_array->errors ?? $terms_array);
+            // echo '</pre>';
+            return $terms_array->errors ? [] : $terms_array;
         }
         function plugin_display_details_meta_box($post) {
             $policy_status = array(
@@ -213,11 +229,21 @@ namespace file_post_type{
                             <select id="year" name="year">
                                 <option></option>
                                 <?php
-                                for( $i = 0, $l = count( $setting_years ); $i < $l; $i++ )
-                                    if( $setting_years[ $i ] == $data['year'] )
-                                        echo "<option selected>" . $setting_years[$i] . "</option>";
-                                    else
-                                        echo "<option>" . $setting_years[$i] . "</option>";
+                                // for( $i = 0, $l = count( $setting_years ); $i < $l; $i++ )
+                                //     if( $setting_years[ $i ] == $data['year'] )
+                                //         echo "<option selected>" . $setting_years[$i] . "</option>";
+                                //     else
+                                //         echo "<option>" . $setting_years[$i] . "</option>";
+                                    $taxonomy = 'committee-year';
+                                    $terms = get_terms([
+                                        'taxonomy' => $taxonomy,
+                                        'hide_empty' => false,
+                                        'orderBy'       => 'name',
+                                        'order'         => 'DESC',
+                                    ]);
+                                    foreach ($terms as $term) {
+                                        echo '<option value="appeals_serving_years" ' . selected($data[$taxonomy],$term->slug) . '>' . esc_html($term->name) . '</option>';
+                                    }
                                 ?>
                             </select>
                         </td>
@@ -225,10 +251,16 @@ namespace file_post_type{
                         <td>
                             <select name="committee">
                                 <option></option>
-                                <option value="appeals_serving_years" <?php if( $data['committee'] == 'appeals_serving_years' )         echo "selected"; ?>>Appeals</option>
-                                <option value="curriculum_serving_years" <?php if( $data['committee'] == 'curriculum_serving_years' )   echo "selected"; ?>>Curriculum</option>
-                                <option value="policy_serving_years" <?php if( $data['committee'] == 'policy_serving_years' )           echo "selected"; ?>>Policy</option>
-                                <option value="program_serving_years" <?php if( $data['committee'] == 'program_serving_years' )         echo "selected"; ?>>Program Review and Awards</option>
+                                <?php
+                                    $taxonomy = 'committee';
+                                    $terms = get_terms([
+                                        'taxonomy'      => $taxonomy,
+                                        'hide_empty'    => false,
+                                    ]);
+                                    foreach ($terms as $term) {
+                                        echo '<option value="appeals_serving_years" ' . selected($data[$taxonomy],$term->slug) . '>' . esc_html($term->name) . '</option>';
+                                    }
+                                ?>
                             </select>
                         </td>
                     </tr>
@@ -325,7 +357,7 @@ namespace file_post_type{
             </div>
         <?php
         }
-function plugin_scripts()
+        function plugin_scripts()
         {
             if (!is_admin()) {
                 wp_deregister_script('jquery');
@@ -412,10 +444,12 @@ function plugin_scripts()
         add_action( 'add_meta_boxes_page', 'file_post_type\add_page_settings_metabox' );
 
 
-		function remove_default_document_type_meta_box() {
+		function remove_default_taxonomy_type_meta_box() {
 			remove_meta_box('tagsdiv-document-type', 'gs_file', 'side');
+			remove_meta_box('committeediv', 'gs_file', 'side');
+			remove_meta_box('committee-yeardiv', 'gs_file', 'side');
 		}
-		add_action('add_meta_boxes', 'file_post_type\remove_default_document_type_meta_box');
+		add_action('add_meta_boxes', 'file_post_type\remove_default_taxonomy_type_meta_box');
 
 
 		function add_document_type_radio_meta_box() {
@@ -448,7 +482,7 @@ function plugin_scripts()
                 'default'
             );
 		}
-		add_action('add_meta_boxes', 'file_post_type\add_document_type_radio_meta_box');
+		// add_action('add_meta_boxes', 'file_post_type\add_document_type_radio_meta_box');
 
 		function document_type_radio_meta_box_callback($post) {
 			$taxonomy = 'document-type';
@@ -510,7 +544,7 @@ function plugin_scripts()
                 }
             }
 		}
-		add_action('save_post', 'file_post_type\save_document_type_radio_selection');
+		// add_action('save_post', 'file_post_type\save_document_type_radio_selection');
 
     }
 }

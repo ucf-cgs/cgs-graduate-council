@@ -32,27 +32,27 @@ namespace gs_migration_settings {
     echo '<h1>GS Migration Tool</h1>';
     echo '<p>This tool will migrate post meta fields (<code>year</code>, <code>committee</code>, <code>document-type</code>) to taxonomy terms for custom post types <code>gs_meetings</code>, <code>gs_file</code>, and <code>gs_member</code>.</p>';
 
-    if (isset($_POST['gs_migrate_meta_to_taxonomies_test']) && check_admin_referer('gs_migration_nonce')) {
-      // gs_migrate_meta_to_taxonomies();
-      gs_migrate_meta_to_taxonomies_test();
+    if (isset($_POST['gs_migrate_meta_to_taxonomies']) && check_admin_referer('gs_migration_nonce')) {
+      gs_migrate_meta_to_taxonomies();
     }
 
+    $summary = get_option('gs_migration_affected_records');
+
     if (get_option('gs_migration_completed')) {
-      echo '<p><strong>Migration has already been completed.</strong></p>';
+      echo '<p><strong>Migration has been completed.</strong></p>';
     } else {
       echo '<form method="post">';
       wp_nonce_field('gs_migration_nonce');
-      echo '<input type="submit" name="gs_migrate_meta_to_taxonomies_test" class="button button-primary" value="Run Test Migration">';
-      $disabled = ''; //get_option('gs_migration_affected_records') ? '' : ' disabled';
-      echo '<input type="checkbox" id="gs_migrate_meta_to_taxonomies" name="gs_migrate_meta_to_taxonomies" value=1
+      echo '<input type="submit" name="gs_migrate_meta_to_taxonomies" class="button button-primary" value="Run Migration">';
+      $disabled = $summary ? '' : ' disabled';
+      echo '<input type="checkbox" id="gs_migrate_write_to_taxonomies" name="gs_migrate_write_to_taxonomies" value=1
         style="display:block; margin:5px; "' . $disabled . '>';
-      echo '<label for="gs_migrate_meta_to_taxonomies">Check here to enable one-time migration execution</label>';
+      echo '<label for="gs_migrate_write_to_taxonomies">Check here to enable migration write to taxonomies (CAUTION: effects are permanent)</label>';
       echo '</form>';
     }
 
     echo '</div>';
 
-    $summary = get_transient('gs_migration_summary');
     if (!empty($summary)) {
       echo '<h2>Migration Summary</h2>';
       echo '<table class="widefat fixed striped">';
@@ -69,14 +69,6 @@ namespace gs_migration_settings {
 
       echo '</tbody></table>';
     }
-  }
-
-  function gs_migrate_meta_to_taxonomies_test() {
-    if ($_POST['gs_migrate_meta_to_taxonomies'])
-      echo '<div class="notice notice-success"><p>Commit box was checked!</p></div>';
-    echo '<pre>';
-    print_r($_POST);
-    echo '</pre>';
   }
 
   function gs_log($message) {
@@ -108,8 +100,9 @@ namespace gs_migration_settings {
     ];
 
     $summary = [];
-
-    gs_log('GS Migration: Starting migration.');
+    $write_to_tax = $_POST['gs_migrate_write_to_taxonomies'];
+    $log_msg = 'GS Migration: Starting' . ($write_to_tax ? '' : ' test') . ' migration.';
+    gs_log($log_msg);
 
     foreach ($post_types as $post_type) {
       $posts = get_posts([
@@ -126,7 +119,10 @@ namespace gs_migration_settings {
           if (!empty($meta_value)) {
             $mapped_meta_value = $search_replace_map[$meta_key]['needle'] ?
               str_replace($search_replace_map[$meta_key]['needle'], $search_replace_map[$meta_key]['replace'], $meta_value) : $meta_value;
-            wp_set_object_terms($post->ID, $mapped_meta_value, $taxonomy, true);
+            if ($write_to_tax) {
+              gs_log("Writing key to taxonomy...");
+              //wp_set_object_terms($post->ID, $mapped_meta_value, $taxonomy, true);
+            }
             $migrated[] = "$meta_key → $taxonomy: $mapped_meta_value";
             gs_log("GS Migration: Post {$post->ID} - $meta_key → $taxonomy: $mapped_meta_value");
           }
@@ -143,10 +139,12 @@ namespace gs_migration_settings {
       }
     }
 
-    update_option('gs_migration_completed', true);
-    set_transient('gs_migration_summary', $summary, 3600); // Store for 1 hour
+    update_option('gs_migration_affected_records', $summary);
+    if ($write_to_tax) {
+      update_option('gs_migration_completed', true);
+    }
 
-    echo '<div class="notice notice-success"><p>Migration completed successfully.</p></div>';
+    echo '<div class="notice notice-success"><p>Migration' . ($write_to_tax ? '' : ' test') . ' completed successfully.</p></div>';
   }
 
   function gs_migrate_options_to_taxonomies_init() {
