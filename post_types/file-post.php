@@ -449,7 +449,7 @@ namespace file_post_type{
 			remove_meta_box('committeediv', 'gs_file', 'side');
 			remove_meta_box('committee-yeardiv', 'gs_file', 'side');
 		}
-		add_action('add_meta_boxes', 'file_post_type\remove_default_taxonomy_type_meta_box');
+		// add_action('add_meta_boxes', 'file_post_type\remove_default_taxonomy_type_meta_box');
 
 
 		function add_document_type_radio_meta_box() {

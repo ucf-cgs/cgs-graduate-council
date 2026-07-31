@@ -251,7 +251,7 @@ namespace gs_settings {
             })();
         </script>
     <?php
-    }
+    } */
     function graduate_settings_college_render()
     {
         $setting_colleges = trim(esc_attr(get_option('colleges')));
@@ -390,7 +390,7 @@ namespace gs_settings {
             })("collegesControls");
         </script>
     <?php
-    } */
+    }
 
     function council_member_settings_init()
     {
@@ -445,13 +445,13 @@ namespace gs_settings {
         //     'graduate_general_settings' // The section of the settings page in which to show the box (default or a section you added with add_settings_section(), look at the page in the source to see what the existing ones are.)
         // );
 
-        // add_settings_field(
-        //     'graduate_text_field_2', // String for use in the 'id' attribute of tags.
-        //     'Colleges', // Title of the field.
-        //     'gs_settings\graduate_settings_college_render', // Function that fills the field with the desired inputs as part of the larger form. Passed a single argument, the $args array. Name and id of the input should match the $id given to this function. The function should echo its output.
-        //     'graduate_council_site_settings', // The menu page on which to display this field. Should match $menu_slug from add_theme_page() or from do_settings_sections().
-        //     'graduate_general_settings' // The section of the settings page in which to show the box (default or a section you added with add_settings_section(), look at the page in the source to see what the existing ones are.)
-        // );
+        add_settings_field(
+            'graduate_text_field_2', // String for use in the 'id' attribute of tags.
+            'Colleges', // Title of the field.
+            'gs_settings\graduate_settings_college_render', // Function that fills the field with the desired inputs as part of the larger form. Passed a single argument, the $args array. Name and id of the input should match the $id given to this function. The function should echo its output.
+            'graduate_council_site_settings', // The menu page on which to display this field. Should match $menu_slug from add_theme_page() or from do_settings_sections().
+            'graduate_general_settings' // The section of the settings page in which to show the box (default or a section you added with add_settings_section(), look at the page in the source to see what the existing ones are.)
+        );
     }
 
     add_action('admin_init', 'gs_settings\council_member_settings_init');
