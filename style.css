@@ -1575,6 +1575,13 @@ h2 {
     border-bottom:1px solid #eee;
     margin-bottom: 15px;
 }
+
+.archive-page-title {
+	font-size: 2em;
+	border-bottom: 1px solid #eee;
+	margin-bottom: 15px;
+}
+
 .site-inner {
     border: 1px solid #ddd;
     background: #fff;
@@ -1588,7 +1595,7 @@ h2 {
 }
 
 /* Do not show the outline on the skip link target. */
-#content[tabindex="-1"]:focus {
+#main[tabindex="-1"]:focus {
 	outline: 0;
 }
 
@@ -4945,6 +4952,18 @@ h3{
 }
 
 h3 span{
+	background: #ffc904;
+	padding: 2px 10px;
+}
+
+.archive-filter-heading {
+	font-size: 23px;
+	line-height: 1.2173913043;
+	margin-top: 20px;
+	margin-bottom: 0!important;
+}
+
+.archive-filter-heading span {
 	background: #ffc904;
 	padding: 2px 10px;
 }
