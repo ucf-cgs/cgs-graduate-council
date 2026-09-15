@@ -4,7 +4,7 @@ Theme URI: https://graduatecouncil.ucf.edu/
 Author: Graduate Studies IT
 Author URI: https://wordpress.org/
 Description: UCF Graduate Council Theme
-Version: 1.10
+Version: 2.0
 License: GNU General Public License v2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Tags: one-column, two-columns, right-sidebar, accessibility-ready, custom-background, custom-colors, custom-header, custom-menu, editor-style, featured-images, flexible-header, microformats, post-formats, rtl-language-support, sticky-post, threaded-comments, translation-ready, blog
@@ -732,8 +732,12 @@ input[type="search"].search-field {
  */
 
 a {
-	color: #0099cc;
+	color: #027ba4;
 	text-decoration: none;
+}
+
+footer a {
+	color: #0099cc;
 }
 
 a:hover,

@@ -349,6 +349,12 @@ get_header(); ?>
                         'forms': 'Forms and Files',
                         'reports': 'Reports'
                     };
+                    var displayPolicyStatus = {
+                        'public_comment': 'Public Comment',
+                        'under_review': 'Under Review',
+                        'approved': 'Approved',
+                        'rejected': 'Not Approved'
+                    };
 
                     var direction = ( sortFilesBy.charAt(0) == '-')? -1:1;
 
@@ -359,7 +365,7 @@ get_header(); ?>
 
 						var filter_type = file['tax-document-type'][0] || displayFileType[ file['document-type'] ];
                         var document_year = (!Array.isArray(file['tax-committee-year']) || 0 == file['tax-committee-year'].length) ? file.year : file['tax-committee-year'].join(", ");
-                        if ( file['policy-status'] && 'Policies' == filter_type ) filter_type = (file['policy-status'] + ' Policy').trim();
+                        if ( file['policy-status'] && 'Policies' == filter_type ) filter_type = (displayPolicyStatus[file['policy-status']] + ' Policy').trim();
 						var program_type = (!Array.isArray(file['tax-committee']) || 0 == file['tax-committee'].length) ? programCodeToProgram[ file.committee ] : file['tax-committee'].join(", ");
 
                         r += "<tr>";

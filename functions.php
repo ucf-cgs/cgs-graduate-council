@@ -132,6 +132,7 @@ function twentysixteen_setup() {
     //include_once('post_types/minutes.php');
     //include_once('post_types/agenda.php');
     include_once('post_types/member.php');
+    include_once('post_types/membership.php');
     include_once('post_types/file-post.php');
 		include_once('post_types/migration_settings.php');
 endif; // twentysixteen_setup
@@ -480,3 +481,164 @@ function gc_policy_update_post_title($post_id) {
 }
 add_action('save_post', 'gc_policy_update_post_title');
 
+/**
+ * Create taxonomies to support modernization of post meta
+ *
+ * @since Graduate Council 2.0
+ */
+function gc_add_taxonomy_types() {
+	register_taxonomy(
+		'college',
+		array(
+			0 => 'gs_membership',
+		),
+		array(
+			'labels' => array(
+				'name' => 'Colleges',
+				'singular_name' => 'College',
+				'menu_name' => 'Colleges',
+				'all_items' => 'All Colleges',
+				'edit_item' => 'Edit College',
+				'view_item' => 'View College',
+				'update_item' => 'Update College',
+				'add_new_item' => 'Add New College',
+				'new_item_name' => 'New College Name',
+				'search_items' => 'Search Colleges',
+				'popular_items' => 'Popular Colleges',
+				'separate_items_with_commas' => 'Separate colleges with commas',
+				'add_or_remove_items' => 'Add or remove colleges',
+				'choose_from_most_used' => 'Choose from the most used colleges',
+				'not_found' => 'No colleges found',
+				'no_terms' => 'No colleges',
+				'items_list_navigation' => 'Colleges list navigation',
+				'items_list' => 'Colleges list',
+				'back_to_items' => '← Go to colleges',
+				'item_link' => 'College Link',
+				'item_link_description' => 'A link to a college',
+			),
+			'public' => true,
+			'show_in_menu' => true,
+			'show_in_rest' => true,
+		)
+	);
+	register_taxonomy(
+		'member_role',
+		array(
+			0 => 'gs_membership',
+		),
+		array(
+			'labels' => array(
+				'name' => 'Member Roles',
+				'singular_name' => 'Member Role',
+				'menu_name' => 'Member Roles',
+				'all_items' => 'All Member Roles',
+				'edit_item' => 'Edit Member Role',
+				'view_item' => 'View Member Role',
+				'update_item' => 'Update Member Role',
+				'add_new_item' => 'Add New Member Role',
+				'new_item_name' => 'New Member Role',
+				'search_items' => 'Search Member Roles',
+				'popular_items' => 'Popular Member Roles',
+				'separate_items_with_commas' => 'Separate member roles with commas',
+				'add_or_remove_items' => 'Add or remove member roles',
+				'choose_from_most_used' => 'Choose from the most used member roles',
+				'not_found' => 'No member roles found',
+				'no_terms' => 'No member roles',
+				'items_list_navigation' => 'Member Roles list navigation',
+				'items_list' => 'Member Roles list',
+				'back_to_items' => '← Go to member roles',
+				'item_link' => 'Member Role Link',
+				'item_link_description' => 'A link to a member role',
+			),
+			'public' => true,
+			'show_in_menu' => true,
+			'show_in_rest' => true,
+		)
+	);
+
+	register_taxonomy( 'committee', array(
+		0 => 'gs_meetings',
+		1 => 'gs_membership',
+		2 => 'gs_file',
+	), array(
+		'labels' => array(
+			'name' => 'Committees',
+			'singular_name' => 'Committee',
+			'menu_name' => 'Committees',
+			'all_items' => 'All Committees',
+			'edit_item' => 'Edit Committee',
+			'view_item' => 'View Committee',
+			'update_item' => 'Update Committee',
+			'add_new_item' => 'Add New Committee',
+			'new_item_name' => 'New Committee Name',
+			'search_items' => 'Search Committees',
+			'not_found' => 'No committees found',
+			'no_terms' => 'No committees',
+			'items_list_navigation' => 'Committees list navigation',
+			'items_list' => 'Committees list',
+			'back_to_items' => '← Go to committees',
+			'item_link' => 'Committee Link',
+			'item_link_description' => 'A link to a committee',
+		),
+		'public' => true,
+		'show_in_menu' => true,
+		'show_in_rest' => true,
+	) );
+
+	register_taxonomy( 'document-type', array(
+		0 => 'gs_file',
+	), array(
+		'labels' => array(
+			'name' => 'Document Types',
+			'singular_name' => 'Document Type',
+			'menu_name' => 'Document Types',
+			'all_items' => 'All Document Types',
+			'edit_item' => 'Edit Document Type',
+			'view_item' => 'View Document Type',
+			'update_item' => 'Update Document Type',
+			'add_new_item' => 'Add New Document Type',
+			'new_item_name' => 'New Document Type Name',
+			'search_items' => 'Search Document Types',
+			'not_found' => 'No document types found',
+			'no_terms' => 'No document types',
+			'items_list_navigation' => 'Document Types list navigation',
+			'items_list' => 'Document Types list',
+			'back_to_items' => '← Go to document types',
+			'item_link' => 'Document Type Link',
+			'item_link_description' => 'A link to a document type',
+		),
+		'public' => true,
+		'show_in_menu' => true,
+		'show_in_rest' => true,
+	) );
+
+	register_taxonomy( 'committee-year', array(
+		0 => 'gs_meetings',
+		1 => 'gs_membership',
+		2 => 'gs_file',
+	), array(
+		'labels' => array(
+			'name' => 'Years',
+			'singular_name' => 'Year',
+			'menu_name' => 'Years',
+			'all_items' => 'All Years',
+			'edit_item' => 'Edit Years',
+			'view_item' => 'View Years',
+			'update_item' => 'Update Years',
+			'add_new_item' => 'Add New Years',
+			'new_item_name' => 'New Years Name',
+			'search_items' => 'Search Years',
+			'not_found' => 'No years found',
+			'no_terms' => 'No years',
+			'items_list_navigation' => 'Years list navigation',
+			'items_list' => 'Years list',
+			'back_to_items' => '← Go to years',
+			'item_link' => 'Years Link',
+			'item_link_description' => 'A link to a years',
+		),
+		'public' => true,
+		'show_in_menu' => true,
+		'show_in_rest' => true,
+	) );
+}
+add_action('init', 'gc_add_taxonomy_types');

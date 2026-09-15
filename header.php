@@ -27,7 +27,7 @@
 
 <body <?php body_class(); ?>>
 <div id="page" class="site">
-	<div class="jorge">
+	<div class="jorge" role="region" aria-label="header">
 		<a class="skip-link screen-reader-text" href="#main"><?php _e( 'Skip to main content', 'twentysixteen' ); ?></a>
 
 		<header id="masthead" class="site-header" role="banner">

@@ -82,21 +82,13 @@ namespace file_post_type{
         function file_data( $id ) {
             $meta   = get_post_meta( $id );
             $data  = array();
-
-            $taxonomies = [
-                'committee',
-                'document-type',
-                'committee-year'
-            ];
+            $taxonomies = get_post_taxonomies( $id );
             foreach ($taxonomies as $taxonomy) {
                 $current_terms      = wp_get_post_terms($id, $taxonomy, ['fields' => 'all_with_object_id']);
                 $data[$taxonomy]    = esc_html( $current_terms[0]->slug ?? (( !empty( $meta[$taxonomy]  ) )? $meta[$taxonomy][0]  : '') );
             }
 
             $data['file_url']       = esc_html( (( !empty( $meta['file_url']  ) )? $meta['file_url'][0]  : '') );
-            // $data['committee']      = esc_html( (( !empty( $meta['committee']  ) )? $meta['committee'][0]  : '') );
-            // $data['document-type']  = esc_html( (( !empty( $meta['document-type']  ) )? $meta['document-type'][0]  : '') );
-            // $data['year']           = esc_html( (( !empty( $meta['year']  ) )? $meta['year'][0]  : '') );
             $data['date']           = esc_html( (( !empty( $meta['date']  ) )? $meta['date'][0]  : '') );
             $data['policy-name']    = esc_html( (( !empty( $meta['policy-name']  ) )? $meta['policy-name'][0]  : '') );
             $data['policy-status']  = esc_html( (( !empty( $meta['policy-status']  ) )? $meta['policy-status'][0]  : '') );
@@ -110,11 +102,45 @@ namespace file_post_type{
             else
                 return '';
         }
+
+        add_action( 'admin_notices', 'file_post_type\gs_save_taxonomy_error_notice' );
+        function gs_save_taxonomy_error_notice() {
+            $messages = get_transient('gs_save_taxonomy_error_' . get_current_user_id()) ?? [];
+            if ( ! $messages ) return;
+
+            delete_transient('gs_save_taxonomy_error_' . get_current_user_id()); var_dump($messages);
+            ?>
+            <div class="notice notice-error is-dismissible">
+                <p><strong>The post was saved, but some taxonomies could not be updated:</strong></p>
+                <ul>
+                    <?php foreach ( $messages as $message ) { ?>
+                        <li><?= esc_html( $message ); ?></li>
+                    <?php } ?>
+                </ul>
+            </div>
+            <?php
+
+        }
+        // Since v2.0: function save_field returns an error string (default = '' when no save error)
         function save_field($id, $post_key, $meta_key, $default = '') {
-            if (isset($_POST[$post_key]) && $_POST[$post_key] != '')
-                update_post_meta( $id, $meta_key, $_POST[$post_key] );
+            $taxonomies = get_post_taxonomies( $id );
+            if (isset($_POST[$post_key]) && $_POST[$post_key] != '') {
+                if ( in_array($meta_key, $taxonomies) ) {
+                    $tax_term = get_term_by('slug', $_POST[$post_key], $meta_key);
+                    $result = wp_set_object_terms($id, [$tax_term->term_id], $meta_key);
+                    // return 'TEST ERROR: The admin notice is working.';
+                    if ( is_wp_error( $result ) ) {
+                        return sprintf('%s taxonomy: %s', get_taxonomy( $meta_key )->labels->singular_name, $result->get_error_message());
+                    }
+                }
+                else {
+                    update_post_meta( $id, $meta_key, $_POST[$post_key] );
+                }
+            }
             else
                 update_post_meta( $id, $meta_key, $default );
+
+            return NULL;
         }
 
 
@@ -125,13 +151,18 @@ namespace file_post_type{
 
         function plugin_save_post($id, $post) {
             if ($post->post_type == 'gs_file') {
+                $errors = [];
                 save_field( $id, 'file_url', 'file_url');
-                save_field( $id, 'committee', 'committee');
-                save_field( $id, 'document-type', 'document-type');
-                save_field( $id, 'year', 'year');
+                $errors[] = save_field( $id, 'committee', 'committee');
+                $errors[] = save_field( $id, 'document-type', 'document-type');
+                $errors[] = save_field( $id, 'committee-year', 'committee-year');
                 save_field( $id, 'policy-name', 'policy-name');
                 save_field( $id, 'policy-status', 'policy-status');
                 save_field( $id, 'policy-url-in-catalog', 'policy-url-in-catalog');
+                $errors = array_filter ( $errors );
+                if ( ! empty( $errors ) ) {
+                    set_transient('gs_save_taxonomy_error_' . get_current_user_id(), $errors, 60);
+                }
 				
 				// Wordpress 5.0 changed the date-picker-ui to a new format m/d/Y => "Weekday NiceMonth Day Year".
 				$date = trim( $_POST['date'] ); // Its important to note that trim returns '' when trimming an unset argument.
@@ -144,10 +175,6 @@ namespace file_post_type{
         function plugin_get_document_type_tax_terms($post) {
             $taxonomy = 'document-type';
             $terms_array = wp_get_post_terms($post->ID, $taxonomy, ['fields' => 'slugs']);
-            // echo '<pre>';
-            // echo ($terms_array->errors ? 'True' : 'False') . "\n";
-            // var_dump($terms_array->errors ?? $terms_array);
-            // echo '</pre>';
             return $terms_array->errors ? [] : $terms_array;
         }
         function plugin_display_details_meta_box($post) {
@@ -224,16 +251,11 @@ namespace file_post_type{
             <div>
                 <table class="file-posting" width="100%">
                     <tr>
-                        <th><label for="year">Year:</label></th>
+                        <th><label for="committee-year">Year:</label></th>
                         <td>
-                            <select id="year" name="year">
+                            <select id="committee-year" name="committee-year">
                                 <option></option>
                                 <?php
-                                // for( $i = 0, $l = count( $setting_years ); $i < $l; $i++ )
-                                //     if( $setting_years[ $i ] == $data['year'] )
-                                //         echo "<option selected>" . $setting_years[$i] . "</option>";
-                                //     else
-                                //         echo "<option>" . $setting_years[$i] . "</option>";
                                     $taxonomy = 'committee-year';
                                     $terms = get_terms([
                                         'taxonomy' => $taxonomy,
@@ -242,14 +264,14 @@ namespace file_post_type{
                                         'order'         => 'DESC',
                                     ]);
                                     foreach ($terms as $term) {
-                                        echo '<option value="appeals_serving_years" ' . selected($data[$taxonomy],$term->slug) . '>' . esc_html($term->name) . '</option>';
+                                        echo '<option value="' . $term->slug . '" ' . selected($data[$taxonomy],$term->slug) . '>' . esc_html($term->name) . '</option>';
                                     }
                                 ?>
                             </select>
                         </td>
                         <th><label for="committee">Committee:</label></th>
                         <td>
-                            <select name="committee">
+                            <select id="committee" name="committee">
                                 <option></option>
                                 <?php
                                     $taxonomy = 'committee';
@@ -258,7 +280,7 @@ namespace file_post_type{
                                         'hide_empty'    => false,
                                     ]);
                                     foreach ($terms as $term) {
-                                        echo '<option value="appeals_serving_years" ' . selected($data[$taxonomy],$term->slug) . '>' . esc_html($term->name) . '</option>';
+                                        echo '<option value="' . $term->slug . '" ' . selected($data[$taxonomy],$term->slug) . '>' . esc_html($term->name) . '</option>';
                                     }
                                 ?>
                             </select>
@@ -278,11 +300,16 @@ namespace file_post_type{
                         <td>
                             <select name="document-type" onchange="handleDocumentTypeChange(this)">
                                 <option></option>
-                                <option value="agenda" <?php if( $data['document-type'] == 'agenda' ) echo "selected"; ?>>Agenda</option>
-                                <option value="minutes" <?php if( $data['document-type'] == 'minutes' ) echo "selected"; ?>>Minutes</option>
-                                <option value="reports" <?php if( $data['document-type'] == 'reports' ) echo "selected"; ?>>Reports</option>
-                                <option value="forms" <?php if( $data['document-type'] == 'forms' ) echo "selected"; ?>>Forms and Files</option>
-                                <option value="policies" <?php if( $data['document-type'] == 'policies' ) echo "selected"; ?>>Policies</option>
+                                <?php
+                                    $taxonomy = 'document-type';
+                                    $terms = get_terms([
+                                        'taxonomy'      => $taxonomy,
+                                        'hide_empty'    => false,
+                                    ]);
+                                    foreach ($terms as $term) {
+                                        echo '<option value="' . $term->slug . '" ' . selected($data[$taxonomy],$term->slug) . '>' . esc_html($term->name) . '</option>';
+                                    }
+                                ?>
                             </select>
                         </td>
                     </tr>
@@ -297,10 +324,11 @@ namespace file_post_type{
                         <td>
                             <select name="policy-status">
                                 <option></option>
-                                <option value="<?= $policy_status['public_comment'] ?>" <?php if( $data['policy-status'] == $policy_status['public_comment'] ) echo "selected"; ?>><?= $policy_status['public_comment'] ?></option>
-                                <option value="<?= $policy_status['under_review'] ?>" <?php if( $data['policy-status'] == $policy_status['under_review'] ) echo "selected"; ?>><?= $policy_status['under_review'] ?></option>
-                                <option value="<?= $policy_status['approved'] ?>" <?php if( $data['policy-status'] == $policy_status['approved'] ) echo "selected"; ?>><?= $policy_status['approved'] ?></option>
-                                <option value="<?= $policy_status['rejected'] ?>" <?php if( $data['policy-status'] == $policy_status['rejected'] ) echo "selected"; ?>><?= $policy_status['rejected'] ?></option>
+                                <?php
+                                    foreach (array_keys($policy_status) as $status_option) {
+                                        echo '<option value="' . esc_html($status_option) . '" ' . selected($status_option, $data['policy-status']) . '>' . esc_html($policy_status[$status_option]) . '</option>';
+                                    }
+                                ?>
                             </select>
                         </td>
                     </tr>
@@ -365,7 +393,7 @@ namespace file_post_type{
                 wp_enqueue_script('jquery');
             }
         }
-
+/* v2.0 - Previously deprecated? Not sure how this code is reached without existence of page_filedirectory.php?
         // ---
         // This function adds meta data to the page template
         // Add the category meta box to the file template admin page.
@@ -442,14 +470,14 @@ namespace file_post_type{
         add_action( 'draft_page', 'file_post_type\save_custom_post_meta' );
         add_action( 'future_page', 'file_post_type\save_custom_post_meta' );
         add_action( 'add_meta_boxes_page', 'file_post_type\add_page_settings_metabox' );
-
+*/
 
 		function remove_default_taxonomy_type_meta_box() {
 			remove_meta_box('tagsdiv-document-type', 'gs_file', 'side');
-			remove_meta_box('committeediv', 'gs_file', 'side');
-			remove_meta_box('committee-yeardiv', 'gs_file', 'side');
+			remove_meta_box('tagsdiv-committee', 'gs_file', 'side');
+			remove_meta_box('tagsdiv-committee-year', 'gs_file', 'side');
 		}
-		// add_action('add_meta_boxes', 'file_post_type\remove_default_taxonomy_type_meta_box');
+		add_action('add_meta_boxes', 'file_post_type\remove_default_taxonomy_type_meta_box');
 
 
 		function add_document_type_radio_meta_box() {

@@ -167,6 +167,14 @@ namespace member_type{
                 'normal',                           // defines the part of the page where the edit screen section should be shown
                 'high'                              // defines the priority within the context where the boxes should show
             );
+            add_meta_box(
+                'gs_memberships',                     // is the required HTML id attribute
+                'Memberships',                     // is the text visible in the heading of the meta box section
+                'member_type\plugin_display_details_meta_box3',  // is the callback which renders the contents of the meta box
+                'gs_member',                     // is the name of the custom post type where the meta box will be displayed
+                'normal',                           // defines the part of the page where the edit screen section should be shown
+                'low'                              // defines the priority within the context where the boxes should show
+            );
         }
         function valueFromMeta( $meta, $key ) {
             if( !empty( $meta[ $key ] ) )
@@ -183,6 +191,9 @@ namespace member_type{
         function file_data( $id ) {
             $meta   = get_post_meta( $id );
             $data  = array();
+            $data['memberships'] = valueFromMetaArray( $meta, 'memberships' );
+            ?><script>var memberships = <?php echo json_encode( $data['memberships'] ); ?>;</script><?php
+            var_dump($data['memberships']); echo '<br>';
 
             $data['first_name']                     = valueFromMeta( $meta, 'first_name' );
             $data['last_name']                      = valueFromMeta( $meta, 'last_name' );
@@ -192,7 +203,7 @@ namespace member_type{
             $data['faculty_senate_member']          = valueFromMeta( $meta, 'faculty_senate_member' );
             $data['faculty_senate_steering_committee_member']       = valueFromMeta( $meta, 'faculty_senate_steering_committee_member' );
 
-            $data['curriculum_serving_years']   = valueFromMetaArray( $meta, 'curriculum_serving_years' );
+            $data['curriculum_serving_years']   = valueFromMetaArray( $meta, 'curriculum_serving_years' ); var_dump($data['curriculum_serving_years']); echo '<br>';
             $data['policy_serving_years']       = valueFromMetaArray( $meta, 'policy_serving_years' );
             $data['appeals_serving_years']      = valueFromMetaArray( $meta, 'appeals_serving_years' );
             $data['program_serving_years']      = valueFromMetaArray( $meta, 'program_serving_years' );
@@ -225,6 +236,7 @@ namespace member_type{
                 save_field( $id, 'faculty_senate_member', 'faculty_senate_member');
                 save_field( $id, 'faculty_senate_steering_committee_member', 'faculty_senate_steering_committee_member');
 
+                save_array( $id, 'memberships', 'memberships');
                 save_field( $id, 'curriculum_serving_years', 'curriculum_serving_years');
                 save_field( $id, 'policy_serving_years', 'policy_serving_years');
                 save_field( $id, 'appeals_serving_years', 'appeals_serving_years');
@@ -585,6 +597,81 @@ namespace member_type{
                         }
                     }
                 })();
+            </script>
+        <?php
+        }
+        function plugin_display_details_meta_box3($post) {
+            $data = file_data( $post->ID );
+            $taxonomies = get_object_taxonomies( 'gs_membership', 'objects' );
+            ?>
+            <div>
+                <style>
+                    table.select-role-table tr td {
+                        width: 100%;
+                        padding: 0;
+                    }
+                    table.select-role-table tr {
+                        display: flex;
+                    }
+                </style>
+                <input id="membership_hidden" name="memberships" type="hidden" value="<?= $data['memberships']; ?>">
+                <?php
+                    
+                ?>
+                <table class="select-role-table" width="100%">
+                    <tr>
+                        <?php
+                            foreach ($taxonomies as $taxonomy) {
+                                echo '<th><label for="membership_' . $taxonomy->name . '_select">' . esc_html($taxonomy->label) . '</label></th>' ;
+                            };
+                        ?>
+                        <th><label for="membership_add">Action</label></th>
+                    </tr>
+                    <tr>  
+                        <?php
+                            foreach ($taxonomies as $taxonomy) {
+                                echo '<td>';
+                                $terms = get_terms([
+                                        'taxonomy' => $taxonomy,
+                                        'hide_empty' => false,
+                                        'orderBy'       => 'name',
+                                        'order'         => 'ASC',
+                                    ]);
+                                select_categories(
+                                    $taxonomy->name,
+                                    'membership_' . $taxonomy->name . '_select',
+                                    wp_list_pluck( $terms, 'name' ),
+                                    false
+                                );
+                                echo '</td>';
+                            }
+                        ?>
+                        <td class="small-table-column">
+                            <button class="button" type="button" id="membership_add" onclick="addMemberRole()">Add</button>
+                        </td>
+                    </tr>
+                </table>
+                <table class="member_details_table" width="100%">
+                    <tr>
+                        <th class="table-label"><label for="curriculum_serving_years">Curriculum Serving Years:</label></th>
+                        <td>
+                            <table class="role-table" width="100%">
+                                <thead><tr><th>Memberships</th><th>Actions</th></tr></thead>
+                                <tbody id="membership_body"><tr><td colspan="2">No History</td></tr></tbody>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            <script>
+                var memberships = {
+                    add: document.getElementById('membership_add'),
+                    body: document.getElementById('curriculum_body'),
+                    hidden: document.getElementById('curriculum_hidden'),
+                    select: document.getElementById('curriculum_select')
+                };
+                function addMemberRole() {
+                    return;
+                }
             </script>
         <?php
         }
