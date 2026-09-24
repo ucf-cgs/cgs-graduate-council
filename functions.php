@@ -521,44 +521,10 @@ function gc_add_taxonomy_types() {
 			'show_in_rest' => true,
 		)
 	);
-	register_taxonomy(
-		'member_role',
-		array(
-			0 => 'gs_membership',
-		),
-		array(
-			'labels' => array(
-				'name' => 'Member Roles',
-				'singular_name' => 'Member Role',
-				'menu_name' => 'Member Roles',
-				'all_items' => 'All Member Roles',
-				'edit_item' => 'Edit Member Role',
-				'view_item' => 'View Member Role',
-				'update_item' => 'Update Member Role',
-				'add_new_item' => 'Add New Member Role',
-				'new_item_name' => 'New Member Role',
-				'search_items' => 'Search Member Roles',
-				'popular_items' => 'Popular Member Roles',
-				'separate_items_with_commas' => 'Separate member roles with commas',
-				'add_or_remove_items' => 'Add or remove member roles',
-				'choose_from_most_used' => 'Choose from the most used member roles',
-				'not_found' => 'No member roles found',
-				'no_terms' => 'No member roles',
-				'items_list_navigation' => 'Member Roles list navigation',
-				'items_list' => 'Member Roles list',
-				'back_to_items' => '← Go to member roles',
-				'item_link' => 'Member Role Link',
-				'item_link_description' => 'A link to a member role',
-			),
-			'public' => true,
-			'show_in_menu' => true,
-			'show_in_rest' => true,
-		)
-	);
 
 	register_taxonomy( 'committee', array(
 		0 => 'gs_meetings',
-		1 => 'gs_membership',
+		1 => 'membership',
 		2 => 'gs_file',
 	), array(
 		'labels' => array(
@@ -614,7 +580,7 @@ function gc_add_taxonomy_types() {
 
 	register_taxonomy( 'committee-year', array(
 		0 => 'gs_meetings',
-		1 => 'gs_membership',
+		1 => 'membership',
 		2 => 'gs_file',
 	), array(
 		'labels' => array(

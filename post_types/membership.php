@@ -9,10 +9,9 @@ namespace membership_type{
 
     if (!function_exists('membership_type\new_post_type_membership')) {
         add_action('wp_enqueue_scripts', 'membership_type\plugin_scripts', 0); // action, array, priority ( 0 lowest, 10 normal, 10+ higher)
-        add_action('init', 'membership_type\new_post_type_file_posting');
         add_action('admin_init', 'membership_type\plugin_meta_box'); // admin_init is triggered before any other hook when a user accesses the admin area.
         add_action('admin_enqueue_scripts', 'membership_type\plugin_admin_scripts');
-        add_action('save_post', 'membership_type\plugin_save_post', 10, 2);
+        add_action('save_post', 'membership_type\plugin_save_post', 10, 2);        
 
         function plugin_admin_scripts($page)
         {
@@ -22,107 +21,103 @@ namespace membership_type{
             wp_enqueue_media();
         }
 
-        function new_post_type_file_posting()
-        {
-            $labels = array(
-                'name' => __('Memberships'),
-                'singular_name' => __('Membership'),
-                'add_new' => 'Add New Membership',
-                'add_new_item' => 'Add New Membership',
+        // function new_post_type_membership_posting()
+        // {
+        //     $labels = array(
+        //         'name' => __('Memberships'),
+        //         'singular_name' => __('Membership'),
+        //         'add_new' => 'Add New Membership',
+        //         'add_new_item' => 'Add New Membership',
+        //         'edit_item' => 'Edit Membership',
+        //         'view_item' => 'View Membership',
+        //         'search_items' => 'Search Memberships',
+        //         'not_found' => 'No Memberships found',
+        //         'not_found_in_trash' => 'No Memberships found in Trash',
+        //         'parent' => 'Parent Membership'
+        //     );
+
+        //     register_post_type('gs_membership',
+        //         array(
+        //             'labels' => $labels,
+        //             'description' => 'Membership details',
+        //             'public' => true,
+        //             'has_archive' => false,
+        //             'rewrite' => array('slug' => 'membership'),
+        //             'supports' => array( 'title', 'page-attributes' ),
+        //             'show_in_menu' => true,
+        //             'menu_icon' => get_template_directory_uri() . '/images/images-alt2.svg',
+        //             'menu_position' => 61,
+        //         )
+        //     );
+        // }
+        // add_action('init', 'membership_type\new_post_type_membership_posting');
+
+        // Alternatively from ACF php export:
+        add_action( 'init', function() {
+            register_post_type( 'membership', array(
+            'labels' => array(
+                'name' => 'Memberships',
+                'singular_name' => 'Membership',
+                'menu_name' => 'Memberships',
+                'all_items' => 'All Memberships',
                 'edit_item' => 'Edit Membership',
                 'view_item' => 'View Membership',
+                'view_items' => 'View Memberships',
+                'add_new_item' => 'Add New Membership',
+                'add_new' => 'Add New Membership',
+                'new_item' => 'New Membership',
+                'parent_item_colon' => 'Parent Membership:',
                 'search_items' => 'Search Memberships',
-                'not_found' => 'No Memberships found',
-                'not_found_in_trash' => 'No Memberships found in Trash',
-                'parent' => 'Parent Membership'
-            );
+                'not_found' => 'No memberships found',
+                'not_found_in_trash' => 'No memberships found in Trash',
+                'archives' => 'Membership Archives',
+                'attributes' => 'Membership Attributes',
+                'insert_into_item' => 'Insert into membership',
+                'uploaded_to_this_item' => 'Uploaded to this membership',
+                'filter_items_list' => 'Filter memberships list',
+                'filter_by_date' => 'Filter memberships by date',
+                'items_list_navigation' => 'Memberships list navigation',
+                'items_list' => 'Memberships list',
+                'item_published' => 'Membership published.',
+                'item_published_privately' => 'Membership published privately.',
+                'item_reverted_to_draft' => 'Membership reverted to draft.',
+                'item_scheduled' => 'Membership scheduled.',
+                'item_updated' => 'Membership updated.',
+                'item_link' => 'Membership Link',
+                'item_link_description' => 'A link to a membership.',
+            ),
+            'public' => true,
+            'show_in_rest' => true,
+            'menu_icon' => 'dashicons-admin-post',
+            'supports' => array(
+                0 => 'title',
+            ),
+            'taxonomies' => array(
+                0 => 'committee',
+                1 => 'committee-year',
+            ),
+            'delete_with_user' => false,
+        ) );
+        } );
 
-            register_post_type('gs_membership',
-                array(
-                    'labels' => $labels,
-                    'description' => 'Membership details',
-                    'public' => true,
-                    'has_archive' => false,
-                    'rewrite' => array('slug' => 'membership'),
-                    'supports' => array( 'title', 'page-attributes' ),
-                    'show_in_menu' => true,
-                    'menu_icon' => get_template_directory_uri() . '/images/images-alt2.svg',
-                    'menu_position' => 61,
-                )
-            );
-        }
+
+
         function remove_tax_meta_boxes () {
-            remove_meta_box( 'tagsdiv-curriculum_serving_years', 'gs_membership', 'side' );
-            remove_meta_box( 'tagsdiv-policy_serving_years', 'gs_membership', 'side' );
-            remove_meta_box( 'tagsdiv-appeals_serving_years', 'gs_membership', 'side' );
-            remove_meta_box( 'tagsdiv-program_serving_years', 'gs_membership', 'side' );
+            remove_meta_box( 'tagsdiv-committee', 'membership', 'side' );
+            remove_meta_box( 'tagsdiv-committee-year', 'membership', 'side' );
         }
         add_action( 'admin_menu' , 'membership_type\remove_tax_meta_boxes' );
 
 
-        add_filter( 'manage_gs_membership_posts_columns', function($columns) {
-
-            unset( $columns['date'] );
-
-            return array_merge( $columns, array(
-                'member'            => __('Member'),
-                'committee-year'    => __('Year'),
-                'college'           => __('College'),
-                'date'              => __('Date'),
-            ));
-        });
-
-        add_filter('manage_edit-gs_membership_sortable_columns', function( $columns ) {
-            // $columns['member'] = 'member';
-            // $columns['committee-year'] = 'committee-year';
-            $columns['college'] = 'college';
-
-            return $columns;
-        });
-
-        add_action( 'pre_get_posts', function( $query ) {
-            if( !is_admin() ) return;
-
-            $orderby = $query->get( 'orderby');
-
-            if( 'college' == $orderby ) {
-                $query->set('meta_key','college');
-                $query->set('orderby','meta_value');
-            }
-        });
-
-
-        add_action( 'manage_gs_membership_posts_custom_column' , function ( $column, $post_id ) {
-            switch ( $column ) {
-                case 'college':
-                    $college   = get_post_meta( $post_id, 'college', true );
-
-                    if( !empty( $college ) )
-                        echo $college;
-                    else
-                        echo '-';
-
-                    break;
-            }
-        }, 10, 2 );
-
         function plugin_meta_box() {
             add_meta_box(
-                'gs_membership',                     // is the required HTML id attribute
+                'membership',                     // is the required HTML id attribute
                 'Membership Details',                     // is the text visible in the heading of the meta box section
                 'membership_type\plugin_display_details_meta_box',  // is the callback which renders the contents of the meta box
-                'gs_membership',                     // is the name of the custom post type where the meta box will be displayed
+                'membership',                     // is the name of the custom post type where the meta box will be displayed
                 'normal',                           // defines the part of the page where the edit screen section should be shown
                 'high'                              // defines the priority within the context where the boxes should show
             );
-            // add_meta_box(
-            //     'gs_membership_serving_years',                     // is the required HTML id attribute
-            //     'Committee Serving Years',                     // is the text visible in the heading of the meta box section
-            //     'membership_type\plugin_display_details_meta_box2',  // is the callback which renders the contents of the meta box
-            //     'gs_membership',                     // is the name of the custom post type where the meta box will be displayed
-            //     'normal',                           // defines the part of the page where the edit screen section should be shown
-            //     'high'                              // defines the priority within the context where the boxes should show
-            // );
         }
         function valueFromMeta( $meta, $key ) {
             if( !empty( $meta[ $key ] ) )
@@ -136,29 +131,92 @@ namespace membership_type{
             else
                 return array();
         }
-        function file_data( $id ) {
+        function membership_data( $id ) {
             $meta   = get_post_meta( $id );
             $data  = array();
-
-            $data['first_name']                     = valueFromMeta( $meta, 'first_name' );
-            $data['last_name']                      = valueFromMeta( $meta, 'last_name' );
-            $data['email']                          = valueFromMeta( $meta, 'email' );
-            $data['college']                        = valueFromMeta( $meta, 'college' );
-            $data['department']                     = valueFromMeta( $meta, 'department' );
-            $data['faculty_senate_member']          = valueFromMeta( $meta, 'faculty_senate_member' );
-            $data['faculty_senate_steering_committee_member']       = valueFromMeta( $meta, 'faculty_senate_steering_committee_member' );
-
-            $data['curriculum_serving_years']   = valueFromMetaArray( $meta, 'curriculum_serving_years' );
-            $data['policy_serving_years']       = valueFromMetaArray( $meta, 'policy_serving_years' );
-            $data['appeals_serving_years']      = valueFromMetaArray( $meta, 'appeals_serving_years' );
-            $data['program_serving_years']      = valueFromMetaArray( $meta, 'program_serving_years' );
+            $taxonomies = get_post_taxonomies( $id );
+            foreach ($taxonomies as $taxonomy) {
+                $current_terms      = wp_get_post_terms($id, $taxonomy, ['fields' => 'all_with_object_id']);
+                $data[$taxonomy]    = esc_html( $current_terms[0]->slug ?? (( !empty( $meta[$taxonomy]  ) )? $meta[$taxonomy][0]  : '') );
+            }
+            $data['role'] = esc_html( (( !empty( $meta['role']  ) )? $meta['role'][0]  : '') );
 
             return $data;
         }
+
+        add_action( 'admin_notices', 'membership_type\gs_save_taxonomy_error_notice' );
+        function gs_save_taxonomy_error_notice() {
+            $messages = get_transient('gs_save_taxonomy_error_' . get_current_user_id()) ?? [];
+            if ( ! $messages ) return;
+
+            delete_transient('gs_save_taxonomy_error_' . get_current_user_id());
+            ?>
+            <div class="notice notice-error is-dismissible">
+                <p><strong>The post was saved, but some taxonomies could not be updated:</strong></p>
+                <ul>
+                    <?php foreach ( $messages as $message ) { ?>
+                        <li><?= esc_html( $message ); ?></li>
+                    <?php } ?>
+                </ul>
+            </div>
+            <?php
+        }
+
+        add_action( 'admin_notices', 'membership_type\gs_create_membership_error_notice' );
+        function gs_create_membership_error_notice() {
+            $messages = get_transient('gs_create_membership_error_' . get_current_user_id()) ?? [];
+            if ( ! $messages ) return;
+
+            delete_transient('gs_create_membership_error_' . get_current_user_id());
+            ?>
+            <div class="notice notice-error is-dismissible">
+                <p><strong>The following posts could not be saved:</strong></p>
+                <ul>
+                    <?php foreach ( $messages as $message ) { ?>
+                        <li><?= esc_html( $message ); ?></li>
+                    <?php } ?>
+                </ul>
+            </div>
+            <?php
+        }
+
+        add_action( 'admin_notices', 'membership_type\gs_copy_memberships_success_notice' );
+        function gs_copy_memberships_success_notice() {
+            $messages = get_transient('gs_copy_memberships_success_' . get_current_user_id()) ?? [];
+            if ( ! $messages ) return;
+
+            delete_transient('gs_copy_memberships_success_' . get_current_user_id());
+            ?>
+            <div class="notice notice-success is-dismissible">
+                <p><strong>Memberships successfully processed for the following councils and corresponding target year:</strong></p>
+                <ul>
+                    <?php foreach ( $messages as $message ) { ?>
+                        <li><?= esc_html( $message ); ?></li>
+                    <?php } ?>
+                </ul>
+            </div>
+            <?php
+        }
+
+        // Since v2.0: function save_field returns an error string (default = '' when no save error)
         function save_field($id, $post_key, $meta_key, $default = '') {
+            $taxonomies = get_post_taxonomies( $id );
             if (isset($_POST[$post_key]) && $_POST[$post_key] != '') {
-                update_post_meta($id, $meta_key, trim($_POST[$post_key]));
-                return $_POST[$post_key];
+                if ( in_array($meta_key, $taxonomies) ) {
+                    $tax_term = get_term_by('slug', $_POST[$post_key], $meta_key);
+                    $result = wp_set_object_terms($id, [$tax_term->term_id], $meta_key);
+                    // return array('error' => 'TEST ERROR: The admin notice is working.',);
+                    if ( is_wp_error( $result ) ) {
+                        return array(
+                            'error' => sprintf('%s taxonomy: %s', get_taxonomy( $meta_key )->labels->singular_name, $result->get_error_message()),
+                        );
+                    }
+                    return $tax_term->name;
+                }
+                else {
+                    update_post_meta($id, $meta_key, trim($_POST[$post_key]));
+                    return $_POST[$post_key];
+                }
             } else {
                 update_post_meta($id, $meta_key, $default);
                 return $default;
@@ -172,32 +230,37 @@ namespace membership_type{
         }
 
         function plugin_save_post($id, $post) {
-            if ($post->post_type == 'gs_membership') {
+            if ($post->post_type == 'membership') {
+                $errors = [];
+                
+                $role = get_field('display_role');
+                $committee = save_field( $id, 'committee', 'committee');
+                if (is_array($committee)) {
+                    $errors[] = $committee['error'];
+                    $committee = '';
+                }
+                $year = save_field( $id, 'committee-year', 'committee-year');
+                if (is_array($year)) {
+                    $errors[] = $year['error'];
+                    $year = '';
+                }
 
-                $first_name = save_field( $id, 'first_name', 'first_name');
-                $last_name = save_field( $id, 'last_name', 'last_name');
-                save_field( $id, 'email', 'email');
-                save_field( $id, 'college', 'college');
-                save_field( $id, 'faculty_senate_member', 'faculty_senate_member');
-                save_field( $id, 'faculty_senate_steering_committee_member', 'faculty_senate_steering_committee_member');
-
-                save_field( $id, 'curriculum_serving_years', 'curriculum_serving_years');
-                save_field( $id, 'policy_serving_years', 'policy_serving_years');
-                save_field( $id, 'appeals_serving_years', 'appeals_serving_years');
-                save_field( $id, 'program_serving_years', 'program_serving_years');
+                $errors = array_filter ( $errors );
+                if ( ! empty( $errors ) ) {
+                    set_transient('gs_save_taxonomy_error_' . get_current_user_id(), $errors, 60);
+                }
 
                 remove_action( 'save_post', 'membership_type\plugin_save_post'  );
                 wp_update_post(array(
                     'ID' => $id,
-                    'post_title' => $last_name . ', ' . $first_name,
-                    'post_name' =>  $first_name . '-' . $last_name,
+                    'post_title' => $committee . ' - ' . $role . ', ' . $year,
+                    'post_name' =>  $committee . '-' . $role . '-' . $year,
                 ));
-                add_action( 'save_post', 'membership_type\plugin_save_post'  );
+                add_action('save_post', 'membership_type\plugin_save_post', 10, 2);
             }
         }
         function plugin_display_details_meta_box($post) {
-            $data = file_data( $post->ID );
-            $setting_colleges = explode(',', trim(esc_attr(get_option('colleges'))));
+            $data = membership_data( $post->ID );
             ?>
             <div>
                 <style>
@@ -207,86 +270,56 @@ namespace membership_type{
                         width: 1%;
                         white-space: nowrap;
                     }
-                    #member_details_table input[type=text] {
-                        width: 100%;
-                    }
                     #member_details_table select {
                         width: 100%;
-                    }
-                    #member_details_table input[type=checkbox] {
-                        margin-left: 1px;
                     }
                 </style>
                 <table id="member_details_table" width="100%">
                     <tr>
-                        <th><label for="first_name">First Name:</label></th>
+                        <th><label for="committee">Committee:</label></th>
                         <td>
-                            <input type="text" name="first_name" id="first_name"
-                                   value="<?php echo $data['first_name'] ?>"/>
-                        </td>
-                        <th style="text-align: right;"><label for="last_name">Last Name:</label></th>
-                        <td>
-                            <input type="text" name="last_name" id="last_name"
-                                   value="<?php echo $data['last_name'] ?>"/>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th><label for="email">Email:</label></th>
-                        <td>
-                            <input type="text" name="email" id="email"
-                                   value="<?php echo $data['email'] ?>"/>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th><label for="college">College (or) Unit:</label></th>
-                        <td>
-							<?php echo $data['college']; ?>
-                            <select name="college" id="college">
+                            <select name="committee" id="committee">
 								<option></option>
-                            <?php
-                                foreach( $setting_colleges as $college ) {
-                                    if( $data['college'] == $college ) {
-                                        echo "<option selected>" . $college . "</option>";
-                                    } else {
-                                        echo "<option>" . $college . "</option>";
+                                <?php
+                                    $taxonomy = 'committee';
+                                    $terms = get_terms([
+                                        'taxonomy' => $taxonomy,
+                                        'hide_empty' => false,
+                                        'orderBy'       => 'name',
+                                        'order'         => 'ASC',
+                                    ]);
+                                    foreach ($terms as $term) {
+                                        echo '<option value="' . $term->slug . '" ' . selected($data[$taxonomy],$term->slug) . '>' . esc_html($term->name) . '</option>';
                                     }
-                                }
-                            ?>
+                                ?>
                             </select>
                         </td>
                     </tr>
                     <tr>
-                        <th><label for="faculty_senate_member">Faculty Senate Member:</label></th>
+                        <th><label for="committee-year">Council Serving Year:</label></th>
                         <td>
-                            <input type="checkbox" id="faculty_senate_member" name="faculty_senate_member"
-                                <?php if( !empty( $data['faculty_senate_member'] ) ) echo 'checked=checked' ?>>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th><label for="faculty_senate_steering_committee_member">F.S. Steering Committee Member:</label></th>
-                        <td>
-                            <input type="checkbox" id="faculty_senate_steering_committee_member" name="faculty_senate_steering_committee_member"
-                                <?php if( !empty( $data['faculty_senate_steering_committee_member'] ) ) echo 'checked=checked' ?>>
+                            <select name="committee-year" id="committee-year">
+								<option></option>
+                                <?php
+                                    $taxonomy = 'committee-year';
+                                    $terms = get_terms([
+                                        'taxonomy' => $taxonomy,
+                                        'hide_empty' => false,
+                                        'orderBy'       => 'name',
+                                        'order'         => 'DESC',
+                                    ]);
+                                    foreach ($terms as $term) {
+                                        echo '<option value="' . $term->slug . '" ' . selected($data[$taxonomy],$term->slug) . '>' . esc_html($term->name) . '</option>';
+                                    }
+                                ?>
+                            </select>
                         </td>
                     </tr>
                 </table>
             </div>
         <?php
         }
-        function select_multiple_categories( $tax, $name, $data ) {
-            $my_terms = get_terms( $tax, array(
-                'orderby' => 'name',
-                'order' => 'DESC',
-                'hide_empty' => 0,
-            ));
-            echo '<select multiple="multiple" name="'. $name .'" id="'. $name .'">';
-            echo '<option></option>';
-            foreach ( $my_terms as $tax_term ) {
-                $selected = !empty( $data ) && in_array( $tax_term->name, $data ) ? ' selected="selected" ' : '';
-                echo '<option '. $selected .'>'. $tax_term->name .'</option>';
-            }
-            echo '</select>';
-        }
+
         function select_categories( $tax, $name, $data, $usingSelected = true ) {
             $my_terms = get_terms( $tax, array(
                 'orderby' => 'name',
@@ -303,247 +336,7 @@ namespace membership_type{
             }
             echo '</select>';
         }
-/*        function plugin_display_details_meta_box2($post) {
-            $data = file_data( $post->ID );
-            ?>
-            <div>
-                <style>
-                    .member_details_table {
-                        border-collapse: collapse;
-                    }
-                    .member_details_table td {
-                        padding: 10px 0 10px 0;
-                    }
-                    .member_details_table th.table-label {
-                        vertical-align: top;
-                        text-align: right;
-                        padding: 30px 10px 0 25px;
-                        width: 1%;
-                        white-space: nowrap;
-                    }
-                    .member_details_table input[type=text] {
-                        width: 100%;
-                    }
-                    .member_details_table select[multiple] {
-                        width: 100%;
-                        height: auto;
-                    }
-                    .member_details_table select {
-                        width: 100%;
-                        height: auto;
-                    }
-                    .member_details_table input[type=checkbox] {
-                        margin-left: 1px;
-                    }
-                    .small-table-column {
-                        text-align: right;
-                        width: 1%;
-                        white-space: nowrap;
-                    }
-                    .role-table {
-                        border-collapse: collapse;
-                    }
-                    .role-table .button {
-                        width: 100%;
-                    }
-                    .role-table thead th {
-                        text-align: left;
-                        padding: 0 10px;
-                        border-bottom: 1px solid #ddd;
-                    }
-                    .role-table tbody td, .role-table tfoot td {
-                        padding: 0;
-                    }
-                    .role-table .role-column {
-                        padding: 0 10px;
-                        border-bottom: 1px solid #ddd;
-                    }
-                </style>
-                <table class="member_details_table" width="100%">
-                    <tr>
-                        <th class="table-label"><label for="curriculum_serving_years">Curriculum Serving Years:</label></th>
-                        <td>
-                            <input id="curriculum_hidden" name="curriculum_serving_years" type="hidden" value="<?php echo implode( ',', $data['curriculum_serving_years'] ); ?>">
-                            <table class="role-table" width="100%">
-                                <thead><tr><th>Memberships</th><th>Actions</th></tr></thead>
-                                <tbody id="curriculum_body"><tr><td colspan="2">No History</td></tr></tbody>
-                                <tfoot>
-                                <tr>
-                                    <td>
-                                        <?php select_categories(
-                                            'curriculum_serving_years',
-                                            'curriculum_select',
-                                            $data['curriculum_serving_years'],
-                                            false
-                                        ); ?>
-                                    </td>
-                                    <td class="small-table-column">
-                                        <button class="button" type="button" id="curriculum_add" onclick="addRole('curriculum')">Add</button>
-                                    </td>
-                                </tr>
-                                </tfoot>
-                            </table>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th class="table-label"><label for="policy_serving_years">Policy Serving Years:</label></th>
-                        <td>
-                            <input id="policy_hidden" name="policy_serving_years" type="hidden" value="<?php echo implode( ',', $data['policy_serving_years'] ); ?>">
-                            <table class="role-table" width="100%">
-                                <thead><tr><th>Memberships</th><th>Actions</th></tr></thead>
-                                <tbody id="policy_body"><tr><td colspan="2">No History</td></tr></tbody>
-                                <tfoot>
-                                <tr>
-                                    <td>
-                                        <?php select_categories(
-                                            'policy_serving_years',
-                                            'policy_select',
-                                            $data['policy_serving_years'],
-                                            false
-                                        ); ?>
-                                    </td>
-                                    <td class="small-table-column">
-                                        <button class="button" type="button" id="policy_add" onclick="addRole('policy')">Add</button>
-                                    </td>
-                                </tr>
-                                </tfoot>
-                            </table>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th class="table-label"><label for="appeals_select">Appeals Serving Years:</label></th>
-                        <td>
-                            <input id="appeals_hidden" name="appeals_serving_years" type="hidden" value="<?php echo implode( ',', $data['appeals_serving_years'] ); ?>">
-                            <table class="role-table" width="100%">
-                                <thead><tr><th>Memberships</th><th>Actions</th></tr></thead>
-                                <tbody id="appeals_body"><tr><td colspan="2">No History</td></tr></tbody>
-                                <tfoot>
-                                <tr>
-                                    <td>
-                                        <?php select_categories(
-                                            'appeals_serving_years',
-                                            'appeals_select',
-                                            $data['appeals_serving_years'],
-                                            false
-                                        ); ?>
-                                    </td>
-                                    <td class="small-table-column">
-                                        <button class="button" type="button" id="appeals_add" onclick="addRole('appeals')">Add</button>
-                                    </td>
-                                </tr>
-                                </tfoot>
-                            </table>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th class="table-label"><label for="program_select">Program Review and Awards Serving Years:</label></th>
-                        <td>
-                            <input id="program_hidden" name="program_serving_years" type="hidden" value="<?php echo implode( ',', $data['program_serving_years'] ); ?>">
-                            <table class="role-table" width="100%">
-                                <thead><tr><th>Memberships</th><th>Actions</th></tr></thead>
-                                <tbody id="program_body"><tr><td colspan="2">No History</td></tr></tbody>
-                                <tfoot>
-                                    <tr>
-                                        <td>
-                                        <?php select_categories(
-                                            'program_serving_years',
-                                            'program_select',
-                                            $data['program_serving_years'],
-                                            false
-                                        ); ?>
-                                        </td>
-                                        <td class="small-table-column">
-                                        <button class="button" type="button" id="program_add" onclick="addRole('program')">Add</button>
-                                        </td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </td>
-                    </tr>
-                </table>
-            </div>
-            <script>
-                var councils = {
-                    curriculum: {
-                        add: document.getElementById('curriculum_add'),
-                        body: document.getElementById('curriculum_body'),
-                        hidden: document.getElementById('curriculum_hidden'),
-                        select: document.getElementById('curriculum_select')
-                    },
-                    policy: {
-                        add: document.getElementById('policy_add'),
-                        body: document.getElementById('policy_body'),
-                        hidden: document.getElementById('policy_hidden'),
-                        select: document.getElementById('policy_select')
-                    },
-                    appeals: {
-                        add: document.getElementById('appeals_add'),
-                        body: document.getElementById('appeals_body'),
-                        hidden: document.getElementById('appeals_hidden'),
-                        select: document.getElementById('appeals_select')
-                    },
-                    program: {
-                        add: document.getElementById('program_add'),
-                        body: document.getElementById('program_body'),
-                        hidden: document.getElementById('program_hidden'),
-                        select: document.getElementById('program_select')
-                    }
-                };
 
-                function readRoles( element ) {
-                    var value = element.value.split(',');
-                    if( value.length > 0 && value[0] != '' )
-                        return value;
-                    else
-                        return [];
-                }
-                function renderRoles( council, roles ) {
-                    var r = '';
-
-                    for( var i = 0; i < roles.length; i++ ) {
-                        r += '<tr>';
-                        r += '<td class="role-column">' + roles[ i ] + '</td>';
-                        r += '<td><button class="button" type="button" onclick="removeRole( \'' + council + '\',\'' + roles[i] + '\')">Remove</button></td>';
-                        r += '</tr>';
-                    }
-
-                    return r;
-                }
-                function addRole( council ) {
-                    var role = councils[ council ].select.value;
-                    councils[ council ].select.value = '';
-
-                    if( role != '' ) {
-                        var roles = readRoles(councils[council].hidden);
-                        roles.push(role);
-
-                        console.log(roles);
-
-                        councils[council].hidden.value = roles.join(',');
-
-                        councils[council].body.innerHTML = renderRoles(council, roles);
-                    }
-                }
-                function removeRole( council, role ) {
-                    var roles = readRoles( councils[ council ].hidden );
-
-                    roles.splice( roles.indexOf( role ), 1 );
-
-                    councils[ council ].hidden.value = roles.join(',');
-
-                    councils[ council ].body.innerHTML = renderRoles( council, roles );
-                }
-                (function initialize(){
-                    for( var council in councils ) {
-                        if( councils.hasOwnProperty( council ) ) {
-                            var roles = readRoles( councils[ council ].hidden );
-                            councils[ council ].body.innerHTML = renderRoles( council, roles );
-                        }
-                    }
-                })();
-            </script>
-        <?php
-        }*/
         function plugin_scripts()
         {
             if (!is_admin()) {
@@ -553,139 +346,306 @@ namespace membership_type{
             }
         }
 
-        // ---
-        // This function adds meta data to the page template
-        // Add the category meta box to the file template admin page.
-        //
-/*        function wpse70958_add_meta_boxes( $post ) {
+    /*
+        The following section creates a membership admin page for year rollover membership automation
+    */
 
-            // Get the page template post meta
-            $page_template = get_post_meta( $post->ID, '_wp_page_template', true );
-            // If the current page uses our specific
-            // template, then output our custom metabox
-
-            if ( 'page_council-homepage.php' == $page_template ) {
-                add_meta_box(
-                    'wpse70958-custom-metabox', // Metabox HTML ID attribute
-                    'Members Settings', // Metabox title
-                    'membership_type\wpse70598_page_template_metabox', // callback name
-                    'page', // post type
-                    'side', // context (advanced, normal, or side)
-                    'high' // priority (high, core, default or low)
-                );
+        function get_previous_committee_year_slug( $year_slug ) {
+            // Example: 2026
+            if ( preg_match( '/^\d{4}$/', $year_slug ) ) {
+                return (string) ( (int) $year_slug - 1 );
             }
-            if ( 'page_members-archive.php' == $page_template ) {
-                add_meta_box(
-                    'wpse70958-custom-metabox', // Metabox HTML ID attribute
-                    'Members Settings', // Metabox title
-                    'membership_type\wpse70598_members_archive_metabox', // callback name
-                    'page', // post type
-                    'side', // context (advanced, normal, or side)
-                    'high' // priority (high, core, default or low)
-                );
+
+            // Example: 2026-2027
+            if ( preg_match( '/^(\d{4})-(\d{4})$/', $year_slug, $matches ) ) {
+
+                $start = (int) $matches[1];
+                $end   = (int) $matches[2];
+
+                return ($start - 1) . '-' . ($end - 1);
             }
-        }*/
+            return false;
+        }
 
-        // Make sure to use "_" instead of "-"
-        function wpse70598_page_template_metabox( $post ) {
-            // Define the meta box form fields here
-            $meta = get_post_meta( $post->ID );
-            $show_committees    = valueFromMeta( $meta, 'show_committees' );
-            $committee          = valueFromMeta( $meta, 'committee' );
+        /**
+         * Create a Membership post and populate the ACF field and taxonomies.
+         *
+         * @param string $content    Post content.
+         * @param string $role       Value for the ACF field.
+         *
+         * @return int|WP_Error Post ID on success, WP_Error on failure.
+         */
+        function create_new_membership( $committee, $year, $role ) {
+            if ( ! $role ) {
+                return new \WP_Error( 'missing_parameter', 'The role parameter is required.' );
+            }
 
-            $meetingSlug        = valueFromMeta( $meta, 'meetingSlug' );
-            $membersSlug        = valueFromMeta( $meta, 'membersSlug' );
-            ?>
-            <style>
-                h3.setting-heading {
-                    margin: 5px 0;
+            // Temporarily disable custom post save function to avoid null references
+            remove_action( 'save_post', 'membership_type\plugin_save_post' );
+
+            // Validate $committee and $year tax terms
+            $committee_term = get_term_by( 'slug', $committee, 'committee' );
+            $year_term = get_term_by( 'slug', $year, 'committee-year' );
+            if ( ! $committee_term || ! $year_term ) {
+                return new \WP_Error( 'invalid_term', 'One or more taxonomy terms could not be found.' );
+            }
+
+            $post_id = wp_insert_post(
+                array(
+                    'post_title'   => $committee_term->name . ' - ' . $role . ', ' . $year,
+                    'post_content' => '',
+                    'post_type'    => 'membership',
+                    'post_status'  => 'publish',
+                ),
+                true // Return WP_Error on failure.
+            );
+
+            if ( is_wp_error( $post_id ) ) {
+                return $post_id;
+            }
+
+            // Associate tax terms and update ACF field
+            wp_set_object_terms( $post_id, array( (int) $committee_term->term_id ), 'committee' );
+            wp_set_object_terms( $post_id, array( (int) $year_term->term_id ), 'committee-year' );
+            update_field( 'display_role', $role, $post_id );
+
+            // Restore Membership page custom post save function
+            add_action('save_post', 'membership_type\plugin_save_post', 10, 2);
+            return $post_id;
+        }
+
+        function copy_committee_memberships($committee_slug, $source_year, $target_year) {
+
+            $memberships = get_posts([
+                'post_type'      => 'membership',
+                'posts_per_page' => -1,
+                'tax_query' => [
+                    'relation' => 'AND',
+                    [
+                        'taxonomy' => 'committee',
+                        'field'    => 'slug',
+                        'terms'    => $committee_slug,
+                    ],
+                    [
+                        'taxonomy' => 'committee-year',
+                        'field'    => 'slug',
+                        'terms'    => $source_year,
+                    ],
+                ],
+            ]);
+
+            // Make the copy function idempotent
+            $existing_memberships = get_posts([
+                'post_type'      => 'membership',
+                'posts_per_page' => -1,
+                'tax_query' => [
+                    'relation' => 'AND',
+                    [
+                        'taxonomy' => 'committee',
+                        'field'    => 'slug',
+                        'terms'    => $committee_slug,
+                    ],
+                    [
+                        'taxonomy' => 'committee-year',
+                        'field'    => 'slug',
+                        'terms'    => $target_year,
+                    ],
+                ],
+            ]);
+            if ( !empty($existing_memberships) ) {
+                $memberships = array_filter( $memberships, function ($membership) use ($existing_memberships) {
+                    $role = get_field( 'display_role', $membership->ID );
+                    $found = array_filter(
+                        $existing_memberships, function ($post) use ($role) {
+                        return $role === get_field( 'display_role', $post->ID );
+                    });
+                    return empty( $found );
+                });
+            }
+
+            // Use filtered source list to create new memberships
+            $errors = [];
+            foreach ( $memberships as $key => $membership ) {
+                $role = get_field( 'display_role', $membership->ID );
+                $post_id = create_new_membership ( $committee_slug, $target_year, $role);
+                if ( is_wp_error( $post_id ) ) {
+                    $errors[] = sprintf('%s - %s, %s: %s', $committee_slug, $role, $target_year, $post_id->get_error_message());
+                    unset( $memberships[$key] );
                 }
-            </style>
-            <div>
-                <h3 class="setting-heading"><label for="committee">Committee:</label></h3>
-                <select id="committee" name="committee">
-                    <option value="" <?php if( $committee == '' ) { echo 'selected'; } ?>></option>
-                    <option value="appeals_serving_years" <?php if( $committee == 'appeals_serving_years' ) { echo 'selected'; } ?>>Appeals</option>
-                    <option value="curriculum_serving_years" <?php if( $committee == 'curriculum_serving_years' ) { echo 'selected'; } ?>>Curriculum</option>
-                    <option value="policy_serving_years" <?php if( $committee == 'policy_serving_years' ) { echo 'selected'; } ?>>Policy</option>
-                    <option value="program_serving_years" <?php if( $committee == 'program_serving_years' ) { echo 'selected'; } ?>>Program Review and Awards</option>
-                </select>
-            </div>
-            <h3 class="setting-heading">Member Settings:</h3>
-            <div>
-                <label for="show_committees">Show Member Committees:</label>
-                <input id="show_committees" type="checkbox" name="show_committees" <?php if( !empty( $show_committees ) ) { echo 'checked="checked"'; } ?>>
-            </div>
-            <h3 class="setting-heading">Meeting Settings:</h3>
-            <div>
-                <label for="hasSubmitDate">Has Submit Date:</label>
-                <input id="hasSubmitDate" name="hasSubmitDate" type="checkbox" <?php if( $meta['hasSubmitDate'][0] ) { echo "checked";} ?>>
-            </div>
-            <div>
-                <label for="hasAgenda">Has Agenda:</label>
-                <input id="hasAgenda" name="hasAgenda" type="checkbox" <?php if( $meta['hasAgenda'][0] ) { echo "checked";} ?>>
-            </div>
-            <div>
-                <label for="hasMinutes">Has Minutes:</label>
-                <input id="hasMinutes" name="hasMinutes" type="checkbox" <?php if( $meta['hasMinutes'][0] ) { echo "checked";} ?>>
-            </div>
-            <div>
-                <label for="meetingSlug">Meetings Archive Slug:</label>
-                <input id="meetingSlug" name="meetingSlug" type="text" value="<?php echo $meetingSlug; ?>" placeholder="Meetings archive slug link">
-            </div>
-            <div>
-                <label for="membersSlug">Members Archive Slug:</label>
-                <input id="memberSlug" name="membersSlug" type="text" value="<?php echo $membersSlug; ?>" placeholder="Members archive slug link">
-            </div>
-        <?php
+            }
+
+            if ( ! empty( $errors ) ) {
+                set_transient('gs_create_membership_error_' . get_current_user_id(), $errors, 60);
+            }
+
+            return $memberships;
+
         }
-        function wpse70598_members_archive_metabox( $post ) {
-            // Define the meta box form fields here
-            $meta = get_post_meta( $post->ID );
-            $show_committees	= valueFromMeta( $meta, 'show_committees' );
-            $committee			= valueFromMeta( $meta, 'committee' );
-            ?>
-            <style>
-                h3.setting-heading {
-                    margin: 5px 0;
+
+        function copy_memberships() {
+            if ( ! empty( $_POST ) && check_admin_referer( 'copy_memberships' ) ) {
+                set_transient('gs_copy_memberships_clicked_' . get_current_user_id(), 'True', 60);
+                $committee_years = $_POST['committee_years'] ?? '[]';
+
+                if ( ! empty( $committee_years ) ) {
+                    $processed = [];
+                    foreach ( $committee_years as $committee_slug => $target_year ) {
+                        if ( empty( $target_year ) ) {
+                            continue;
+                        }
+                        $source_year = get_previous_committee_year_slug( $target_year );
+                        $processed[$committee_slug] = copy_committee_memberships( $committee_slug, $source_year, $target_year );
+                    }
+
+                    if ( ! empty( $processed ) ) {
+                        foreach ($processed as $committee_slug => $posts_array) {
+                            $processed[$committee_slug] = array_map( function ($post) {
+                                return (object) [
+                                    'id' => $post->ID,
+                                    'title' => $post->post_title,
+                                    'date_published' => $post->post_date
+                                ];
+                            }, $posts_array);
+                        }
+                        set_transient('gs_copy_memberships_processed_' . get_current_user_id(), $processed, 60);
+                    }
+
+                    // Use Committee tax name in notification and only show if at least one membership successfully copied
+                    $terms = get_terms(['taxonomy' => 'committee', 'hide_empty' => false]);
+                    $committee_slugs = array_keys(array_filter($committee_years));
+                    if (!empty($terms)) {
+                        $terms = array_filter( $terms, function ($term) use ( $committee_slugs, $processed ) {
+                            return in_array($term->slug, $committee_slugs) && !empty($processed[$term->slug]);
+                        });
+                    }
+                    set_transient(
+                        'gs_copy_memberships_success_' . get_current_user_id(),
+                        array_map(function($term) use ( $committee_years) {
+                            return $term->name . ': ' . $committee_years[$term->slug];
+                        }, $terms),
+                        60
+                    );
                 }
-            </style>
-            <div>
-                <h3 class="setting-heading"><label for="committee">Committee:</label></h3>
-                <select id="committee" name="committee">
-                    <option value="" <?php if( $committee == '' ) { echo 'selected'; } ?>></option>
-                    <option value="appeals_serving_years" <?php if( $committee == 'appeals_serving_years' ) { echo 'selected'; } ?>>Appeals</option>
-                    <option value="curriculum_serving_years" <?php if( $committee == 'curriculum_serving_years' ) { echo 'selected'; } ?>>Curriculum</option>
-                    <option value="policy_serving_years" <?php if( $committee == 'policy_serving_years' ) { echo 'selected'; } ?>>Policy</option>
-                    <option value="program_serving_years" <?php if( $committee == 'program_serving_years' ) { echo 'selected'; } ?>>Program Review and Awards</option>
-                </select>
+                $url = admin_url( 'edit.php?post_type=membership&page=membership-admin' );
+                wp_safe_redirect( add_query_arg( 'copied', 1, $url ) );
+                exit;
+            }
+        }
+        add_action('admin_post_copy_memberships', 'membership_type\copy_memberships');
+
+        function register_membership_admin_page() {
+            add_submenu_page(
+                'edit.php?post_type=membership',
+                'Membership Admin',
+                'Membership Admin',
+                'manage_options',
+                'membership-admin',
+                'membership_type\render_membership_admin_page'
+            );
+        }
+        add_action( 'admin_menu', 'membership_type\register_membership_admin_page' );
+
+        function render_membership_admin_page() {
+            $committees = get_terms([
+                'taxonomy'   => 'committee',
+                'hide_empty' => false,
+                'orderby'    => 'name',
+                'order'      => 'ASC',
+            ]);
+
+            $committee_labels = !empty($committees) ? array_column($committees, 'name', 'slug') : [];
+
+            $years = get_terms([
+                'taxonomy'   => 'committee-year',
+                'hide_empty' => false,
+                'orderby'    => 'name',
+                'order'      => 'DESC',
+            ]);
+
+            ?>
+
+            <div class="wrap">
+                <h1>Membership Admin</h1>
+
+                <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+                    <input type="hidden" name="action" value="copy_memberships">
+                    <?php wp_nonce_field( 'copy_memberships' ); ?>
+                    <table class="widefat">
+                        <thead>
+                            <tr>
+                                <th>Committee</th>
+                                <th>Target Year</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ( $committees as $committee ) { ?>
+                            <tr>
+                                <td>
+                                    <?= esc_html( $committee->name ); ?>
+                                </td>
+                                <td>
+                                    <select
+                                        name="committee_years[<?= esc_attr( $committee->slug ); ?>]">
+                                        <option value="">
+                                            -- Skip Committee --
+                                        </option>
+                                        <?php foreach ( $years as $year ) { ?>
+                                            <option value="<?php echo esc_attr( $year->slug ); ?>">
+                                                <?php echo esc_html( $year->name ); ?>
+                                            </option>
+                                        <?php } ?>
+                                    </select>
+                                </td>
+                            </tr>
+                        <?php } ?>
+                        </tbody>
+                    </table>
+                    <p>
+                        <button class="button button-primary">
+                            Create Memberships
+                        </button>
+                    </p>
+                </form>
             </div>
-        <?php
-        }
-
-        function wpse70958_save_custom_post_meta( $ID ) {
-            $page_template = get_post_meta( $ID, '_wp_page_template', true );
-            // If the current page uses our specific
-            // template, then output our custom metabox
-
-            if ( 'page_council-homepage.php' == $page_template ) {
-                save_field($ID, 'show_committees', 'show_committees');
-                save_field($ID, 'committee', 'committee');
-                save_field($ID, 'hasSubmitDate', 'hasSubmitDate');
-                save_field($ID, 'hasAgenda', 'hasAgenda');
-                save_field($ID, 'hasMinutes', 'hasMinutes');
-
-                save_field($ID, 'meetingSlug', 'meetingSlug');
-                save_field($ID, 'membersSlug', 'membersSlug');
+            <?php $processed_memberships = get_transient('gs_copy_memberships_processed_' . get_current_user_id()) ?? [];
+            if (get_transient('gs_copy_memberships_clicked_' . get_current_user_id()) ?? '') {
+                delete_transient('gs_copy_memberships_clicked_' . get_current_user_id());
+                if (!$processed_memberships) {
+                    echo '<p>No posts copied.</p>';
+                }
+                else {
+                    ?>
+                    <div class="wrap">
+                        <h1>Memberships Copied:</h1>
+                        <?php foreach ($processed_memberships as $committee_slug => $memberships) { ?>
+                        <h2><?= $committee_labels[$committee_slug] ?? $committee_slug; ?></h2>
+                        <?php if (empty($memberships)) {
+                            echo '<p>No uncopied memberships exist in prior year for this council.</p>';
+                        }
+                        else { ?>
+                            <table class="widefat">
+                                <thead>
+                                    <tr>
+                                        <th>Post ID</th>
+                                        <th>Membership Title</th>
+                                        <th>Date Published</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($memberships as $membership) { ?>
+                                    <tr><td><?= $membership->id; ?></td>
+                                        <td><?= $membership->title; ?></td>
+                                        <td><?= $membership->date_published; ?></td>
+                                    </tr>
+                                    <?php } ?>
+                                </tbody>
+                            </table>
+                        <?php } } ?>
+                    </div>
+                    <?php
+                }
             }
-            if ( 'page_members-archive.php' == $page_template ) {
-                save_field($ID, 'show_committees', 'show_committees');
-                save_field($ID, 'committee', 'committee');
-            }
+            delete_transient('gs_copy_memberships_processed_' . get_current_user_id());
         }
-        // add_action( 'publish_page', 'membership_type\wpse70958_save_custom_post_meta' );
-        // add_action( 'draft_page', 'membership_type\wpse70958_save_custom_post_meta' );
-        // add_action( 'future_page', 'membership_type\wpse70958_save_custom_post_meta' );
-        // add_action( 'add_meta_boxes_page', 'membership_type\wpse70958_add_meta_boxes' );
     }
 }

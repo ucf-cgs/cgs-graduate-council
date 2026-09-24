@@ -108,7 +108,7 @@ namespace file_post_type{
             $messages = get_transient('gs_save_taxonomy_error_' . get_current_user_id()) ?? [];
             if ( ! $messages ) return;
 
-            delete_transient('gs_save_taxonomy_error_' . get_current_user_id()); var_dump($messages);
+            delete_transient('gs_save_taxonomy_error_' . get_current_user_id());
             ?>
             <div class="notice notice-error is-dismissible">
                 <p><strong>The post was saved, but some taxonomies could not be updated:</strong></p>
