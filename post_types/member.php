@@ -159,13 +159,14 @@ namespace member_type{
                 'normal',                           // defines the part of the page where the edit screen section should be shown
                 'high'                              // defines the priority within the context where the boxes should show
             );
+            // TODO: Remove this meta box and associated code once GS Migration functionality verified
             add_meta_box(
                 'gs_member_serving_years',                     // is the required HTML id attribute
                 'Committee Serving Years',                     // is the text visible in the heading of the meta box section
                 'member_type\plugin_display_details_meta_box2',  // is the callback which renders the contents of the meta box
                 'gs_member',                     // is the name of the custom post type where the meta box will be displayed
                 'normal',                           // defines the part of the page where the edit screen section should be shown
-                'high'                              // defines the priority within the context where the boxes should show
+                'low'                              // defines the priority within the context where the boxes should show
             );
         }
         function valueFromMeta( $meta, $key ) {

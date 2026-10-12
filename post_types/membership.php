@@ -602,7 +602,7 @@ namespace membership_type{
                     </table>
                     <p>
                         <button class="button button-primary">
-                            Create Memberships
+                            Copy Memberships
                         </button>
                     </p>
                 </form>
