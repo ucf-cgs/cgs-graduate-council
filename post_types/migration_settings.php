@@ -29,69 +29,6 @@ namespace gs_migration_settings {
     return ['gs_meetings', 'gs_file', 'gs_member'];
   }
 
-  // function gs_render_migration_settings_page() {
-  //   if (!is_super_admin()) {
-  //     echo '<div class="wrap">';
-  //     echo '<h1>This page is only for Multisite Network Administrators</h1>';
-  //     echo '</div>';
-  //     return;
-  //   }
-
-  //   echo '<div class="wrap">';
-  //   echo '<h1>GS Migration Tool</h1>';
-  //   echo '<p>This tool will migrate post meta fields (<code>year</code>, <code>committee</code>, <code>document-type</code>) to taxonomy terms for custom post types <code>gs_meetings</code>, <code>gs_file</code>, and <code>gs_member</code>.</p>';
-
-  //   if (isset($_POST['gs_migrate_meta_to_taxonomies']) && check_admin_referer('gs_migration_nonce')) {
-  //     gs_migrate_meta_to_taxonomies();
-  //   }
-  //   $summary = [];
-  //   $summary_row_count = 0;
-  //   $post_types = gs_migration_get_post_types();
-  //   foreach ( $post_types as $post_type ) {
-  //     $option_name = 'gs_migration_affected_records_' . $post_type;
-  //     $summary[$post_type] = get_option($option_name, []);
-  //     $summary_row_count += count($summary[$post_type]);
-  //   }
-
-  //   if (get_option('gs_migration_completed')) {
-  //     echo '<p><strong>Migration has been completed.</strong></p>';
-  //   } else {
-  //     echo '<form method="post">';
-  //     wp_nonce_field('gs_migration_nonce');
-  //     echo '<input type="submit" name="gs_migrate_meta_to_taxonomies" class="button button-primary" value="Run Migration">';
-  //     $disabled = $summary_row_count ? '' : ' disabled';
-  //     echo '<input type="checkbox" id="gs_migrate_write_to_taxonomies" name="gs_migrate_write_to_taxonomies" value=1
-  //       style="display:block; margin:5px; "' . $disabled . '>';
-  //     echo '<label for="gs_migrate_write_to_taxonomies">Check here to enable migration write to taxonomies (CAUTION: effects are permanent)</label>';
-  //     echo '</form>';
-  //   }
-
-  //   echo '</div>';
-
-  //   if ($summary_row_count > 0) {
-  //     echo '<h2>Migration Summary</h2>';
-  //     echo '<table class="widefat fixed striped">';
-  //     echo '<thead><tr><th>Post ID</th><th>Title</th><th>Post Type</th><th>Migrated Terms</th></tr></thead><tbody>';
-
-  //     foreach ( $post_types as $post_type ) {
-  //       foreach ($summary[$post_type] as $row) {
-  //         if ( 902 == $row['ID'] ) vardump (get_membership_post_id('policy', '2024-2025', 'Liaison from the College of Graduate Studies'));
-  //         echo '<tr>';
-  //         echo '<td>' . esc_html($row['ID']) . '</td>';
-  //         echo '<td>' . esc_html($row['title']) . '</td>';
-  //         echo '<td>' . esc_html($row['type']) . '</td>';
-  //         echo '<td>';
-  //         if ( $row['migrated'] ) echo $row['migrated'];
-  //         if ( $row['migrated'] && $row['not_migrated'] ) echo '<br>';
-  //         if ( $row['not_migrated'] ) echo '<span class="invalid-tax-term">' . $row['not_migrated'] . ' (invalid term)</span>';
-  //         echo '</td>';
-  //         echo '</tr>';
-  //       }
-  //     }
-
-  //     echo '</tbody></table>';
-  //   }
-  // }
   function gs_render_migration_settings_page() {
     if ( ! is_super_admin() ) {
       echo '<div class="wrap">';
@@ -432,10 +369,14 @@ namespace gs_migration_settings {
   }
 
   function add_member_to_membership( $member_id, $membership_id ) {
-    $current_members = get_field( 'member', $membership_id );
+    // Using $format_value = false to ignore ACF relationship return type setting
+    $current_members = get_field( 'member', $membership_id, false );
     if ( !is_array( $current_members ) ) {
       $current_members = [];
     }
+    // Normalize for strict in_array check
+    $current_members = array_map( 'intval', $current_members );
+    $member_id       = (int) $member_id;
     if ( !in_array( $member_id, $current_members, true ) ) {
       $current_members[] = $member_id;
     }
@@ -502,10 +443,9 @@ namespace gs_migration_settings {
             foreach ($meta_array_value as $serving_year) {
               [$year, $role] = explode(' ', $serving_year, 2);
               $committee = str_replace('_serving_years', '', $meta_key);
-              $membership_id = get_membership_post_id( $committee, $year, $role );
+              $membership_id = get_membership_post_id( $committee . '-committee', $year, $role );
               if ( $write_to_tax && $membership_id ) {
-                // TODO: some extra processing for member/membership relationship
-                //add_member_to_membership ($post->ID, $membership_id);
+                add_member_to_membership ($post->ID, $membership_id);
               }
               if ( $membership_id ) {
                 $migrated[] = "Member($meta_key) → Committee, Year, Role: $committee, $year, $role";
